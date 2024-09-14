@@ -60,32 +60,23 @@ def get_label_text(label):
         print(f"Warning: Unrecognized label '{label}'. Defaulting to 'Unknown'.")
         return 'Unknown'
 
-def visualize_image_with_prediction(image, prediction, mask, label, pred_label, save_path):
+def visualize_image_with_prediction(image, mask, label, pred_label, save_path):
     num_slices = image.shape[1]  # Number of slices in the second dimension
-    fig, ax = plt.subplots(2, num_slices, figsize=(20, 6))
+    fig, ax = plt.subplots(1, num_slices, figsize=(20, 6))
 
     for i in range(num_slices):
         contours_mask = find_contours(mask[i], level=0.5)
-        contours_pred = find_contours(prediction[i], level=0.5)
 
         pred_label_text = get_label_text(pred_label)
         if label != -1:
             true_label_text = get_label_text(label)
-        color = 'blue' if pred_label == 0 else 'green' if pred_label == 1 else 'red'
 
         # Display the original image slice with mask outline
-        ax[0, i].imshow(image[:, i, :], cmap='gray')
+        ax[i].imshow(image[:, i, :], cmap='gray')
         for contour in contours_mask:
-            ax[0, i].plot(contour[:, 1], contour[:, 0], linewidth=2, color='red')
-        ax[0, i].set_title(f'Image with Mask Outline Slice {i}')
-        ax[0, i].axis('off')
-
-        # Display the original image slice with prediction outline
-        ax[1, i].imshow(image[:, i, :], cmap='gray')
-        for contour in contours_pred:
-            ax[1, i].plot(contour[:, 1], contour[:, 0], linewidth=2, color=color)
-        ax[1, i].set_title(f'Image with Prediction Outline Slice {i} ({pred_label_text})')
-        ax[1, i].axis('off')
+            ax[i].plot(contour[:, 1], contour[:, 0], linewidth=2, color='red')
+        ax[i].set_title(f'Slice {i}')
+        ax[i].axis('off')
 
     if label != -1:
         plt.suptitle(f'True Label: {true_label_text}, Pred Label: {pred_label_text}', fontsize=18)
@@ -148,7 +139,7 @@ def html_visualize(model, data_loader, save_dir, n_classes):
                 save_path = os.path.join(save_dir, f'prediction_{num_images_saved}_{pred_label_text}.png')
 
                 # Visualize the prediction and save the image
-                visualize_image_with_prediction(image, prediction_one_hot[1], mask, true_label, pred_label, save_path)
+                visualize_image_with_prediction(image, mask, true_label, pred_label, save_path)
                 image_paths.append(save_path)
 
                 if num_images_saved % 64 == 0:
