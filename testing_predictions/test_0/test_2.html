@@ -1,0 +1,146 @@
+<html>
+                <style>
+                .im0{position:absolute;top:0px;left:0px;height:100%;}
+                .im1{position:relative;top:-75px;left:-75px;opacity:0.7;}
+                .im2{position:absolute;top:-75px;left:-75px;opacity:0.3;}
+                .crop{position:relative;left:0;top:0;overflow:hidden;width:900px;height:270px;}
+                </style>
+                
+                <script src="../js/jquery-1.7.1.min.js"></script>
+                <h1> User 0, Category: DVH, Page 3/3</h1>
+                <h3> color coding</h3>
+                <ul><li>black: undefined</li>
+<li>red: CV</li>
+<li>yellow: DV</li>
+<li>blue: DVH</li>
+</ul>
+<table cellpadding=8 border=2>
+	 <tr>
+		<td id="t0" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_11.png">
+                                </div>
+                                </td>
+		<td id="t1" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_16.png">
+                                </div>
+                                </td>
+</tr>
+	 <tr>
+		<td id="t2" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_19.png">
+                                </div>
+                                </td>
+		<td id="t3" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_20.png">
+                                </div>
+                                </td>
+</tr>
+	 <tr>
+		<td id="t4" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_94.png">
+                                </div>
+                                </td>
+		<td id="t5" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_134.png">
+                                </div>
+                                </td>
+</tr>
+	 <tr>
+		<td id="t6" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_193.png">
+                                </div>
+                                </td>
+		<td id="t7" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_337.png">
+                                </div>
+                                </td>
+</tr>
+	 <tr>
+		<td id="t8" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_373.png">
+                                </div>
+                                </td>
+		<td id="t9" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_504.png">
+                                </div>
+                                </td>
+</tr>
+	 <tr>
+		<td id="t10" class="cc" bgcolor="blue">
+
+                                <div class="crop">
+                                    <img class="im0" src="../../testing_predictions/DVH/prediction_615.png">
+                                </div>
+                                </td>
+</table>
+<table border=2>
+                    <tr>
+                        <td>
+                            <button id="sub" style="width:100%;height=40">Done</button>
+                        </td>
+                        <td>
+                            <button id="next" style="width:100%;height=40">Next</button>
+                        </td>
+                    </tr>
+                    </table>
+                    
+                    <script>
+                        TOTAL_I=11;
+                        colors=["black","red","yellow","blue"];
+                    
+                function get_answer() {
+                    var out='';
+                    var cc='';
+                    for(var i=0;i<TOTAL_I;i++){
+                        cc = $("#t"+i)[0].style.backgroundColor
+                        out += Math.max(0, colors.indexOf(cc))
+                        if(i < TOTAL_I-1){
+                            out += ',';                        
+                        }
+                    }
+                    return out
+                }
+                $(".cc").click(function(){
+                    // next color
+                    if($(this)[0].style.backgroundColor == ""){
+                        $(this)[0].style.backgroundColor = colors[1 % colors.length]; 
+                    } else {
+                        $(this)[0].style.backgroundColor = colors[(colors.indexOf($(this)[0].style.backgroundColor) + 1) % colors.length]
+                    }
+                });
+                
+                $("#next").click(function(){
+                    window.location = '../test_0/test_3.html'
+                });
+                
+                    $("#sub").click(function(){                        
+                        const link = document.createElement("a");
+                        const content = get_answer();
+                        const file = new Blob([content], { type: 'text/plain' });
+                        link.href = URL.createObjectURL(file);
+                        link.download = "saved_0_2.txt";
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                    });
+                    </script>
+</html>

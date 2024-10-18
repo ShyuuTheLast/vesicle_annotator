@@ -4,10 +4,15 @@ import torch
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import time
 import matplotlib
+import re
+import glob
+import os
+import h5py
 
+from scripts.html_visualization import HtmlGenerator
 from scripts.data_loader import create_data_loader
 from scripts.vesicle_net import VesicleNet, create_model, load_checkpoint, train_model
-from scripts.visualization import html_visualize
+from scripts.img_visualization import generate_images
 
 def train_and_save_model(image_file, mask_file, label_file, checkpoint_path, batch_size, n_channels, n_classes,
                          num_epochs, lr, momentum):
@@ -68,30 +73,75 @@ def eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_cha
     print(f"Validation Recall: {recall:.4f}")
     print(f"Validation F1 Score: {f1:.4f}")
 
-def show_visuals(image_file, mask_file, label_file, checkpoint_path, save_dir, n_channels, n_classes, batch_size, lr=0.001,
+def extract_number(string):
+    numbers = re.findall(r'\d+', string)  # Find all numeric substrings
+    return int(numbers[-1]) if numbers else -1  # Return the last number if found, otherwise return -1
+
+def get_image_paths_from_folder(folder_dir):
+    # Get all .png files in the folder and subfolders
+    image_paths = glob.glob(os.path.join(folder_dir, '**', '*.png'), recursive=True)
+
+    # Sort image paths numerically based on the number in the filename
+    image_paths.sort(key=extract_number)
+
+    # Convert backslashes to forward slashes for HTML compatibility and add '../../' before the path
+    image_paths = [['../../' + path.replace('\\', '/')] for path in image_paths]
+
+    return image_paths
+
+def generate_html(input_folder, output_folder, pred_file_name, color_labels):
+    # Get all subfolders (CV, DV, DVH)
+    subfolders = [f.path for f in os.scandir(input_folder) if f.is_dir() and os.path.basename(f.path) in color_labels]
+
+    num_user = 1  # number of users
+
+    all_image_paths = []
+    all_image_labels = []
+
+    # Loop through each subfolder (CV, DV, DVH)
+    for subfolder in subfolders:
+        # Get the name of the subfolder (e.g., CV, DV, DVH)
+        category = os.path.basename(subfolder)
+
+        # Generate the image paths from the subfolder
+        image_paths = get_image_paths_from_folder(subfolder)
+        all_image_paths.append(image_paths)
+
+        # Construct the HDF5 label file name with category behind pred_file_name
+        label_file = os.path.join(subfolder, f'{pred_file_name}_{category}.h5')
+
+        # Open the HDF5 file to get image labels
+        dataset_name = "main"
+        with h5py.File(label_file, 'r') as f:
+            image_labels = np.array(f[dataset_name])
+
+        # Append the image labels for this subfolder to the list of all image labels
+        all_image_labels.append(image_labels)
+
+    # Generate HTML for this category using HtmlGenerator
+    html = HtmlGenerator(input_folder, output_folder, subfolders, color_labels, num_user=num_user, num_column=2)
+    html.create_html(all_image_paths, all_image_labels)
+
+def predict_images(image_file, mask_file, label_file, checkpoint_path, save_dir, n_channels, n_classes, batch_size, pred_file_name, lr=0.001,
                  momentum=0.9):
     logging.info("Custom Dataset Processing")
-
     logging.info('==> Evaluating ...')
 
     start_time = time.time()
 
     # Create data loader for test images
     data_loader = create_data_loader(image_file, mask_file, label_file, batch_size, shuffle=False)
-
     # Initialize the model and optimizer
     model = VesicleNet(in_channels=n_channels, num_classes=n_classes)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum)
 
     # Load model checkpoint
     load_checkpoint(model, optimizer, checkpoint_path)
-
     # Perform predictions on test images and generate visualizations
-    html_visualize(model, data_loader, save_dir, n_classes)
+    generate_images(model, data_loader, save_dir, pred_file_name)
 
     end_time = time.time()
     print(f"Visualizations generated in {end_time - start_time:.2f} seconds")
-
 
 if __name__ == '__main__':
 
@@ -105,8 +155,7 @@ if __name__ == '__main__':
     test_label_file = None
 
     checkpoint_path = 'model_checkpoint.pth'
-    visualization_save_dir = 'testing_predictions'
-
+    color_labels = ["undefined", "CV", "DV", "DVH"]
     # Model and training parameters
     num_epochs = 40
     batch_size = 128
@@ -121,6 +170,17 @@ if __name__ == '__main__':
 
     #eval_model_results(train_image_file, train_mask_file, train_label_file, checkpoint_path, n_channels, n_classes, batch_size, lr, momentum)
 
-    show_visuals(test_image_file, test_mask_file, test_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, lr, momentum)
+    visualize_training = True
+    if visualize_training:
+        visualization_save_dir = 'training_predictions'
+        pred_file_name = "training_results"
+        #predict_images(train_image_file, train_mask_file, train_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, pred_file_name, lr, momentum)
+        generate_html(visualization_save_dir, visualization_save_dir, pred_file_name, color_labels)
 
+    visualize_testing = True
+    if visualize_testing:
+        visualization_save_dir = 'testing_predictions'
+        pred_file_name = "testing_results"
+        predict_images(test_image_file, test_mask_file, test_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, pred_file_name, lr, momentum)
+        generate_html(visualization_save_dir, visualization_save_dir, pred_file_name, color_labels)
 
