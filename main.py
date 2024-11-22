@@ -150,8 +150,8 @@ if __name__ == '__main__':
     train_mask_file = 'data/big_vesicle_cls/bigV_cls_mask_v2.h5'
     train_label_file = 'data/big_vesicle_cls/bigV_cls_label_v2.h5'
 
-    test_image_file = 'data/big_vesicle_cls_testing/bigV_cls_202406_im.h5'
-    test_mask_file = 'data/big_vesicle_cls_testing/bigV_cls_202406_mask.h5'
+    test_image_file = 'data/vesicle_big_KR4_30-8-8_patch/vesicle_big_KR4_30-8-8_patch_im.h5'
+    test_mask_file = 'data/vesicle_big_KR4_30-8-8_patch/vesicle_big_KR4_30-8-8_patch_mask.h5'
     test_label_file = None
 
     checkpoint_path = 'model_checkpoint.pth'
@@ -170,16 +170,16 @@ if __name__ == '__main__':
 
     #eval_model_results(train_image_file, train_mask_file, train_label_file, checkpoint_path, n_channels, n_classes, batch_size, lr, momentum)
 
-    visualize_training = True
+    visualize_training = False
     if visualize_training:
         visualization_save_dir = 'training_predictions'
         pred_file_name = "training_results"
-        #predict_images(train_image_file, train_mask_file, train_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, pred_file_name, lr, momentum)
+        predict_images(train_image_file, train_mask_file, train_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, pred_file_name, lr, momentum)
         generate_html(visualization_save_dir, visualization_save_dir, pred_file_name, color_labels)
 
     visualize_testing = True
     if visualize_testing:
-        visualization_save_dir = 'testing_predictions'
+        visualization_save_dir = 'vesicle_big_KR4_30-8-8_patch_predictions'
         pred_file_name = "testing_results"
         predict_images(test_image_file, test_mask_file, test_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, pred_file_name, lr, momentum)
         generate_html(visualization_save_dir, visualization_save_dir, pred_file_name, color_labels)

@@ -255,7 +255,7 @@ class HtmlGenerator(object):
                     var out='';
                     var cc='';
                     for(var i=0;i<TOTAL_I;i++){
-                        cc = $("#t"+i)[0].style.backgroundColor
+                        cc = $("#t"+i)[0].getAttribute("bgcolor");
                         out += Math.max(0, colors.indexOf(cc))
                         if(i < TOTAL_I-1){
                             out += ',';                        
@@ -264,12 +264,9 @@ class HtmlGenerator(object):
                     return out
                 }
                 $(".cc").click(function(){
-                    // next color
-                    if($(this)[0].style.backgroundColor == ""){
-                        $(this)[0].style.backgroundColor = colors[1 % colors.length]; 
-                    } else {
-                        $(this)[0].style.backgroundColor = colors[(colors.indexOf($(this)[0].style.backgroundColor) + 1) % colors.length]
-                    }
+                    var currentColor = $(this)[0].getAttribute("bgcolor");
+                    var nextColor = colors[(colors.indexOf(currentColor) + 1) % colors.length];
+                     $(this)[0].setAttribute("bgcolor", nextColor);
                 });
                 """
                 out += """
