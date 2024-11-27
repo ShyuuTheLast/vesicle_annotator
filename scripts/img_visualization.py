@@ -36,20 +36,20 @@ def visualize_image_with_prediction(image, mask, label, pred_label, save_dir, nu
         ax[i].axis('off')
 
     if label != -1:
-        plt.suptitle(f'True Label: {true_label_text}, Pred Label: {pred_label_text}', fontsize=18)
+        plt.suptitle(f'ID: {num_images_saved}, True Label: {true_label_text}, Predicted Label: {pred_label_text}', fontsize=18)
     else:
-        plt.suptitle(f'Pred Label: {pred_label_text}', fontsize=18)
+        plt.suptitle(f'ID: {num_images_saved}, Predicted Label: {pred_label_text}', fontsize=18)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     category_folder = os.path.join(save_dir, pred_label_text)
     os.makedirs(category_folder, exist_ok=True)
 
     # Save the figure
-    save_path = os.path.join(category_folder, f'prediction_{num_images_saved}.png')
+    save_path = os.path.join(category_folder, f'{num_images_saved}.png')
     plt.savefig(save_path)
     plt.close(fig)
 
-def generate_images(model, data_loader, save_dir, pred_file_name):
+def generate_images(model, data_loader, save_dir):
     """
     Evaluates the model on the provided data_loader, generates predictions, and saves visualizations.
 
@@ -57,7 +57,6 @@ def generate_images(model, data_loader, save_dir, pred_file_name):
         model (torch.nn.Module): The trained model to evaluate.
         data_loader (torch.utils.data.DataLoader): DataLoader providing the test data.
         save_dir (str): Directory where the visualizations and HTML will be saved.
-        n_classes (int): The number of classes in the classification problem.
     """
     model.eval()
     num_images_saved = 0  # Counter to keep track of saved images
@@ -74,7 +73,7 @@ def generate_images(model, data_loader, save_dir, pred_file_name):
             _, predicted = torch.max(outputs, 1)
 
             for i in range(inputs.size(0)):
-                num_images_saved += 1  # Increment the counter
+
 
                 image = inputs[i, 0].cpu().numpy()
                 prediction = predicted[i].cpu().numpy()
@@ -90,13 +89,15 @@ def generate_images(model, data_loader, save_dir, pred_file_name):
                 # Visualize the prediction and save the image
                 visualize_image_with_prediction(image, mask, true_label, pred_label, save_dir, num_images_saved)
 
+                num_images_saved += 1  # Increment the counter
+
                 if num_images_saved % 64 == 0:
                     print(f"Checkpoint: {num_images_saved} images processed")
 
     for category, predictions in category_predictions.items():
         category_folder = os.path.join(save_dir, category)
         os.makedirs(category_folder, exist_ok=True)
-        category_file_path = os.path.join(category_folder, f'{pred_file_name}_{category}.h5')
+        category_file_path = os.path.join(category_folder, f'{category}.h5')
         with h5py.File(category_file_path, 'w') as h5file:
             h5file.create_dataset('main', data=np.array(predictions))
 

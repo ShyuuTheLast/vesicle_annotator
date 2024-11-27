@@ -16,80 +16,52 @@
 </ul>
 <table cellpadding=8 border=2>
 	 <tr>
-		<td id="t0" class="cc" bgcolor="blue">
+		<td id="160" class="cc" bgcolor="blue">
 
                                 <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_26.png">
+                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/160.png">
                                 </div>
                                 </td>
-		<td id="t1" class="cc" bgcolor="blue">
+		<td id="288" class="cc" bgcolor="blue">
 
                                 <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_88.png">
-                                </div>
-                                </td>
-</tr>
-	 <tr>
-		<td id="t2" class="cc" bgcolor="blue">
-
-                                <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_106.png">
-                                </div>
-                                </td>
-		<td id="t3" class="cc" bgcolor="blue">
-
-                                <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_161.png">
+                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/288.png">
                                 </div>
                                 </td>
 </tr>
 	 <tr>
-		<td id="t4" class="cc" bgcolor="blue">
+		<td id="417" class="cc" bgcolor="blue">
 
                                 <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_197.png">
+                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/417.png">
                                 </div>
                                 </td>
-		<td id="t5" class="cc" bgcolor="blue">
+		<td id="948" class="cc" bgcolor="blue">
 
                                 <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_206.png">
-                                </div>
-                                </td>
-</tr>
-	 <tr>
-		<td id="t6" class="cc" bgcolor="blue">
-
-                                <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_302.png">
-                                </div>
-                                </td>
-		<td id="t7" class="cc" bgcolor="blue">
-
-                                <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_418.png">
+                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/948.png">
                                 </div>
                                 </td>
 </tr>
 	 <tr>
-		<td id="t8" class="cc" bgcolor="blue">
+		<td id="1000" class="cc" bgcolor="blue">
 
                                 <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_949.png">
+                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/1000.png">
                                 </div>
                                 </td>
-		<td id="t9" class="cc" bgcolor="blue">
+		<td id="1116" class="cc" bgcolor="blue">
 
                                 <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_1001.png">
+                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/1116.png">
                                 </div>
                                 </td>
 </tr>
 	 <tr>
-		<td id="t10" class="cc" bgcolor="blue">
+		<td id="1647" class="cc" bgcolor="blue">
 
                                 <div class="crop">
-                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/prediction_1300.png">
+                                    <img class="im0" src="../../vesicle_big_KR4_30-8-8_patch_predictions/DVH/1647.png">
                                 </div>
                                 </td>
 </table>
@@ -105,20 +77,21 @@
                     </table>
                     
                     <script>
-                        TOTAL_I=11;
+                        TOTAL_I=7;
                         colors=["black","red","yellow","blue"];
                     
                 function get_answer() {
                     var out='';
-                    var cc='';
-                    for(var i=0;i<TOTAL_I;i++){
-                        cc = $("#t"+i)[0].getAttribute("bgcolor");
-                        out += Math.max(0, colors.indexOf(cc))
-                        if(i < TOTAL_I-1){
-                            out += ',';                        
+                    $(".cc").each(function(index) {  // Loop through all elements with the class "cc"
+                        var vesicleId = this.id;  // Get the vesicle ID from the id attribute
+                        var cc = this.getAttribute("bgcolor");  // Get the background color
+                        var colorIndex = Math.max(0, colors.indexOf(cc));  // Get the color index
+                        out += `(${vesicleId}:${colorIndex})`;  // Format as (vesicle id:color id)
+                        if (index < $(".cc").length - 1) {
+                            out += ',';  // Separate pairs with commas
                         }
-                    }
-                    return out
+                    });
+                    return out;
                 }
                 $(".cc").click(function(){
                     var currentColor = $(this)[0].getAttribute("bgcolor");

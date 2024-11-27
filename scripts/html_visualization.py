@@ -201,7 +201,7 @@ class HtmlGenerator(object):
                     if (i_rel % self.num_column) == 0:
                         out += "\t <tr>\n"
                     out += (
-                        f'\t\t<td id="t{i_rel}" class="cc"'
+                        f'\t\t<td id="{os.path.splitext(os.path.basename(image_paths[i][0]))[0]}" class="cc"'
                         f' bgcolor="{colors[image_labels[i]]}">\n'
                     )
                     for image_path in image_paths[i]:
@@ -253,15 +253,16 @@ class HtmlGenerator(object):
                 out += """
                 function get_answer() {
                     var out='';
-                    var cc='';
-                    for(var i=0;i<TOTAL_I;i++){
-                        cc = $("#t"+i)[0].getAttribute("bgcolor");
-                        out += Math.max(0, colors.indexOf(cc))
-                        if(i < TOTAL_I-1){
-                            out += ',';                        
+                    $(".cc").each(function(index) {  // Loop through all elements with the class "cc"
+                        var vesicleId = this.id;  // Get the vesicle ID from the id attribute
+                        var cc = this.getAttribute("bgcolor");  // Get the background color
+                        var colorIndex = Math.max(0, colors.indexOf(cc));  // Get the color index
+                        out += `(${vesicleId}:${colorIndex})`;  // Format as (vesicle id:color id)
+                        if (index < $(".cc").length - 1) {
+                            out += ',';  // Separate pairs with commas
                         }
-                    }
-                    return out
+                    });
+                    return out;
                 }
                 $(".cc").click(function(){
                     var currentColor = $(this)[0].getAttribute("bgcolor");

@@ -89,7 +89,7 @@ def get_image_paths_from_folder(folder_dir):
 
     return image_paths
 
-def generate_html(input_folder, output_folder, pred_file_name, color_labels):
+def generate_html(input_folder, output_folder, color_labels):
     # Get all subfolders (CV, DV, DVH)
     subfolders = [f.path for f in os.scandir(input_folder) if f.is_dir() and os.path.basename(f.path) in color_labels]
 
@@ -107,8 +107,8 @@ def generate_html(input_folder, output_folder, pred_file_name, color_labels):
         image_paths = get_image_paths_from_folder(subfolder)
         all_image_paths.append(image_paths)
 
-        # Construct the HDF5 label file name with category behind pred_file_name
-        label_file = os.path.join(subfolder, f'{pred_file_name}_{category}.h5')
+        # Construct the HDF5 label file name with category
+        label_file = os.path.join(subfolder, f'{category}.h5')
 
         # Open the HDF5 file to get image labels
         dataset_name = "main"
@@ -122,7 +122,7 @@ def generate_html(input_folder, output_folder, pred_file_name, color_labels):
     html = HtmlGenerator(input_folder, output_folder, subfolders, color_labels, num_user=num_user, num_column=2)
     html.create_html(all_image_paths, all_image_labels)
 
-def predict_images(image_file, mask_file, label_file, checkpoint_path, save_dir, n_channels, n_classes, batch_size, pred_file_name, lr=0.001,
+def predict_images(image_file, mask_file, label_file, checkpoint_path, save_dir, n_channels, n_classes, batch_size, lr=0.001,
                  momentum=0.9):
     logging.info("Custom Dataset Processing")
     logging.info('==> Evaluating ...')
@@ -138,7 +138,7 @@ def predict_images(image_file, mask_file, label_file, checkpoint_path, save_dir,
     # Load model checkpoint
     load_checkpoint(model, optimizer, checkpoint_path)
     # Perform predictions on test images and generate visualizations
-    generate_images(model, data_loader, save_dir, pred_file_name)
+    generate_images(model, data_loader, save_dir)
 
     end_time = time.time()
     print(f"Visualizations generated in {end_time - start_time:.2f} seconds")
@@ -150,8 +150,8 @@ if __name__ == '__main__':
     train_mask_file = 'data/big_vesicle_cls/bigV_cls_mask_v2.h5'
     train_label_file = 'data/big_vesicle_cls/bigV_cls_label_v2.h5'
 
-    test_image_file = 'data/vesicle_big_KR4_30-8-8_patch/vesicle_big_KR4_30-8-8_patch_im.h5'
-    test_mask_file = 'data/vesicle_big_KR4_30-8-8_patch/vesicle_big_KR4_30-8-8_patch_mask.h5'
+    test_image_file = 'data/big_vesicle_cls_testing/bigV_cls_202406_im.h5'
+    test_mask_file = 'data/big_vesicle_cls_testing/bigV_cls_202406_mask.h5'
     test_label_file = None
 
     checkpoint_path = 'model_checkpoint.pth'
@@ -170,17 +170,15 @@ if __name__ == '__main__':
 
     #eval_model_results(train_image_file, train_mask_file, train_label_file, checkpoint_path, n_channels, n_classes, batch_size, lr, momentum)
 
-    visualize_training = False
+    visualize_training = True
     if visualize_training:
         visualization_save_dir = 'training_predictions'
-        pred_file_name = "training_results"
-        predict_images(train_image_file, train_mask_file, train_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, pred_file_name, lr, momentum)
-        generate_html(visualization_save_dir, visualization_save_dir, pred_file_name, color_labels)
+        predict_images(train_image_file, train_mask_file, train_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, lr, momentum)
+        generate_html(visualization_save_dir, visualization_save_dir, color_labels)
 
     visualize_testing = True
     if visualize_testing:
-        visualization_save_dir = 'vesicle_big_KR4_30-8-8_patch_predictions'
-        pred_file_name = "testing_results"
-        predict_images(test_image_file, test_mask_file, test_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, pred_file_name, lr, momentum)
-        generate_html(visualization_save_dir, visualization_save_dir, pred_file_name, color_labels)
+        visualization_save_dir = 'testing_predictions'
+        predict_images(test_image_file, test_mask_file, test_label_file, checkpoint_path, visualization_save_dir, n_channels, n_classes, batch_size, lr, momentum)
+        generate_html(visualization_save_dir, visualization_save_dir, color_labels)
 
