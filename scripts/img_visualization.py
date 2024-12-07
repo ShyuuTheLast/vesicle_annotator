@@ -24,10 +24,6 @@ def visualize_image_with_prediction(image, mask, label, pred_label, save_dir, nu
     for i in range(num_slices):
         contours_mask = find_contours(mask[i], level=0.5)
 
-        pred_label_text = get_label_text(pred_label)
-        if label != -1:
-            true_label_text = get_label_text(label)
-
         # Display the original image slice with mask outline
         ax[i].imshow(image[:, i, :], cmap='gray')
         for contour in contours_mask:
@@ -35,10 +31,13 @@ def visualize_image_with_prediction(image, mask, label, pred_label, save_dir, nu
         ax[i].set_title(f'Slice {i}')
         ax[i].axis('off')
 
+    pred_label_text = get_label_text(pred_label)
+
     if label != -1:
-        plt.suptitle(f'ID: {num_images_saved}, True Label: {true_label_text}, Predicted Label: {pred_label_text}', fontsize=18)
+        true_label_text = get_label_text(label)
+        plt.suptitle(f'Neuron: {save_dir}, ID: {num_images_saved}, True Label: {true_label_text}, Predicted Label: {pred_label_text}', fontsize=18)
     else:
-        plt.suptitle(f'ID: {num_images_saved}, Predicted Label: {pred_label_text}', fontsize=18)
+        plt.suptitle(f'Neuron: {save_dir}, ID: {num_images_saved}, Predicted Label: {pred_label_text}', fontsize=18)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     category_folder = os.path.join(save_dir, pred_label_text)
@@ -66,32 +65,32 @@ def generate_images(model, data_loader, save_dir):
     category_predictions = {}
 
     with torch.no_grad():
-        for inputs, masks, label in data_loader:  # Adjusted to match the correct return order
-            print(f"Processing batch of {inputs.size(0)} images.")
+        for inputs, masks, labels, ids in data_loader:  # Adjusted to match the correct return order
+            #print(f"Processing batch of {inputs.size(0)} images.")
             inputs = inputs.float().unsqueeze(1)  # Adding channel dimension for grayscale
             outputs = model(inputs)
             _, predicted = torch.max(outputs, 1)
 
             for i in range(inputs.size(0)):
-
+                num_images_saved += 1  # Increment the counter
 
                 image = inputs[i, 0].cpu().numpy()
                 prediction = predicted[i].cpu().numpy()
                 mask = masks[i].cpu().numpy()
                 pred_label = predicted[i].cpu().item()
-                true_label = label[i]
+                true_label = labels[i]
 
                 category_name = get_label_text(pred_label)
                 if category_name not in category_predictions:
                     category_predictions[category_name] = []
                 category_predictions[category_name].append(prediction + 1)
 
+                vesicle_id = ids[i] if ids[i] != -1 else num_images_saved
+
                 # Visualize the prediction and save the image
-                visualize_image_with_prediction(image, mask, true_label, pred_label, save_dir, num_images_saved)
+                visualize_image_with_prediction(image, mask, true_label, pred_label, save_dir, vesicle_id)
 
-                num_images_saved += 1  # Increment the counter
-
-                if num_images_saved % 64 == 0:
+                if num_images_saved % 512 == 0:
                     print(f"Checkpoint: {num_images_saved} images processed")
 
     for category, predictions in category_predictions.items():
