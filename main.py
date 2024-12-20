@@ -166,16 +166,29 @@ def extract_number(string):
 
 
 def get_image_paths_from_folder(folder_dir):
+    """
+    Retrieve image paths relative to the html_files directory, assuming a fixed folder structure.
+
+    Args:
+        folder_dir (str): The directory containing the images (e.g., category_a or category_b).
+
+    Returns:
+        list: A list of lists, where each sublist contains a relative path to an image.
+    """
     # Get all .png files in the folder and subfolders
     image_paths = glob.glob(os.path.join(folder_dir, '**', '*.png'), recursive=True)
 
     # Sort image paths numerically based on the number in the filename
     image_paths.sort(key=extract_number)
 
-    # Convert backslashes to forward slashes for HTML compatibility and add '../../' before the path
-    image_paths = [['../../' + path.replace('\\', '/')] for path in image_paths]
+    # Prepend '../' and construct the relative paths
+    category_name = os.path.basename(folder_dir)  # Get the name of the category (e.g., 'category_a')
+    relative_paths = [
+        [f"../{category_name}/{os.path.basename(path)}"]
+        for path in image_paths
+    ]
 
-    return image_paths
+    return relative_paths
 
 
 def generate_html(input_folder, output_folder, color_labels):
@@ -269,6 +282,8 @@ if __name__ == '__main__':
 
     source_folder = "data/to_be_sorted"
     neuron_list = sort_files_to_directories(source_folder)
+    #resut_sub_folders = [os.path.basename(f.path) for f in os.scandir("results")]
+    #neuron_list = resut_sub_folders
 
     for neuron_name in neuron_list:
         print(f"Beginning visualization for {neuron_name}...")
