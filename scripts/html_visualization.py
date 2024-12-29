@@ -3,7 +3,7 @@ import os, sys
 import shutil
 import math
 import numpy as np
-from scripts.util import mkdir, read_txt, write_txt
+from scripts.util import mkdir, write_txt
 
 COLORS = [
     "black",
