@@ -32,12 +32,12 @@ def visualize_image_with_prediction(image, mask, label, pred_label, save_dir, nu
         ax[i].axis('off')
 
     pred_label_text = get_label_text(pred_label)
-
+    neuron_name = os.path.basename(save_dir)
     if label != -1:
         true_label_text = get_label_text(label)
-        plt.suptitle(f'Neuron: {save_dir}, ID: {num_images_saved}, True Label: {true_label_text}, Predicted Label: {pred_label_text}', fontsize=18)
+        plt.suptitle(f'Neuron: {neuron_name}, ID: {num_images_saved}, True Label: {true_label_text}, Predicted Label: {pred_label_text}', fontsize=18)
     else:
-        plt.suptitle(f'Neuron: {save_dir}, ID: {num_images_saved}, Predicted Label: {pred_label_text}', fontsize=18)
+        plt.suptitle(f'Neuron: {neuron_name}, ID: {num_images_saved}, Predicted Label: {pred_label_text}', fontsize=18)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     category_folder = os.path.join(save_dir, pred_label_text)

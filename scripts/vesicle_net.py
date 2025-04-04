@@ -47,7 +47,7 @@ class VesicleNet(nn.Module):
 
 def create_model(in_channels, num_classes, lr, momentum):
     model = VesicleNet(in_channels=in_channels, num_classes=num_classes)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=-1)
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
     return model, criterion, optimizer
 
@@ -67,7 +67,7 @@ def load_checkpoint(model, optimizer, checkpoint_path):
 def train_model(model, criterion, optimizer, train_loader, start_epoch, num_epochs, checkpoint_path):
     for epoch in range(start_epoch, num_epochs):
         model.train()
-        for inputs, _, targets in tqdm(train_loader):
+        for inputs, _, targets, _ in tqdm(train_loader):
             optimizer.zero_grad()
             inputs = inputs.float().unsqueeze(1)  # Adding channel dimension for grayscale
             outputs = model(inputs)

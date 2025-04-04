@@ -116,7 +116,6 @@ def train_and_save_model(image_file, mask_file, label_file, checkpoint_path, bat
     end_time = time.time()
     print(f"Training completed in {end_time - start_time:.2f} seconds")
 
-
 def eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_channels, n_classes, batch_size, lr=0.001,
                        momentum=0.9):
     # Initialize the model and optimizer
@@ -135,7 +134,7 @@ def eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_cha
 
     model.eval()
     with torch.no_grad():
-        for inputs, masks, labels in val_loader:  # Adjusted to match the correct return order
+        for inputs, masks, labels, ids in val_loader:  # Adjusted to match the correct return order
             inputs = inputs.float().unsqueeze(1)  # Adding channel dimension for grayscale
             outputs = model(inputs)
             _, predicted = torch.max(outputs, 1)
@@ -247,6 +246,99 @@ def predict_images(image_file, mask_file, label_file, bounding_box_file, checkpo
     end_time = time.time()
     print(f"Visualizations generated in {end_time - start_time:.2f} seconds")
 
+def create_balanced_dataset_from_all_cells(output_folder):
+    base_dir = 'data'
+    all_images = []
+    all_masks = []
+    all_labels = []
+
+    for folder in os.listdir(base_dir):
+        folder_path = os.path.join(base_dir, folder)
+        im_path = os.path.join(folder_path, 'im.h5')
+        mask_path = os.path.join(folder_path, 'mask.h5')
+        label_path = os.path.join(folder_path, 'label.h5')
+        if not all(os.path.exists(p) for p in [im_path, mask_path, label_path]):
+            continue
+
+        with h5py.File(im_path, 'r') as f:
+            all_images.append(f['main'][:])
+        with h5py.File(mask_path, 'r') as f:
+            all_masks.append(f['main'][:])
+        with h5py.File(label_path, 'r') as f:
+            all_labels.append(f['main'][:])  # keep 1-based
+
+    images = np.concatenate(all_images, axis=0)
+    masks = np.concatenate(all_masks, axis=0)
+    labels = np.concatenate(all_labels, axis=0)
+
+    cv_idx = np.where(labels == 1)[0]
+    dv_idx = np.where(labels == 2)[0]
+    dvh_idx = np.where(labels == 3)[0]
+
+    print("Total counts from all cells:")
+    print(f"CV:  {len(cv_idx)}")
+    print(f"DV:  {len(dv_idx)}")
+    print(f"DVH: {len(dvh_idx)}")
+
+    target_count = min(len(cv_idx), len(dv_idx), len(dvh_idx))
+    np.random.seed(0)
+    cv_sample = np.random.choice(cv_idx, target_count, replace=False)
+    dv_sample = np.random.choice(dv_idx, target_count, replace=False)
+    dvh_sample = np.random.choice(dvh_idx, target_count, replace=False)
+
+    all_idx = np.concatenate([cv_sample, dv_sample, dvh_sample])
+    np.random.shuffle(all_idx)
+
+    os.makedirs(output_folder, exist_ok=True)
+    with h5py.File(os.path.join(output_folder, 'im.h5'), 'w') as f:
+        f.create_dataset('main', data=images[all_idx])
+    with h5py.File(os.path.join(output_folder, 'mask.h5'), 'w') as f:
+        f.create_dataset('main', data=masks[all_idx])
+    with h5py.File(os.path.join(output_folder, 'label.h5'), 'w') as f:
+        f.create_dataset('main', data=labels[all_idx])
+    print(f"Balanced dataset saved to {output_folder} with {len(all_idx)} samples.")
+
+def run_new_training_from_balanced_data():
+    balanced_dir = os.path.join('data', 'balanced_from_multi')
+    create_balanced_dataset_from_all_cells(balanced_dir)
+    checkpoint_out = 'model_checkpoint_balanced_multi.pth'
+
+    train_and_save_model(
+        os.path.join(balanced_dir, 'im.h5'),
+        os.path.join(balanced_dir, 'mask.h5'),
+        os.path.join(balanced_dir, 'label.h5'),
+        checkpoint_out,
+        batch_size=128,
+        n_channels=1,
+        n_classes=3,
+        num_epochs=50,
+        lr=0.001,
+        momentum=0.9
+    )
+
+def evaluate_on_all_valid_datasets(checkpoint_path):
+    base_dir = 'data'
+    print("\nEvaluating on all valid datasets:\n")
+    for folder in sorted(os.listdir(base_dir)):
+        folder_path = os.path.join(base_dir, folder)
+        im_path = next((os.path.join(folder_path, f) for f in os.listdir(folder_path) if 'im' in f and f.endswith('.h5')), None)
+        mask_path = next((os.path.join(folder_path, f) for f in os.listdir(folder_path) if 'mask' in f and f.endswith('.h5')), None)
+        label_path = next((os.path.join(folder_path, f) for f in os.listdir(folder_path) if 'label' in f and f.endswith('.h5')), None)
+
+        if not all([im_path, mask_path, label_path]):
+            print(f"Skipping {folder}: incomplete data")
+            continue
+
+        print(f"\nEvaluating {folder}:")
+        eval_model_results(
+            image_file=im_path,
+            mask_file=mask_path,
+            label_file=label_path,
+            checkpoint_path=checkpoint_path,
+            n_channels=1,
+            n_classes=3,
+            batch_size=128
+        )
 
 if __name__ == '__main__':
 
@@ -261,6 +353,11 @@ if __name__ == '__main__':
     momentum = 0.9
     matplotlib.use('Agg')
 
+    run_balanced_training = False
+    if run_balanced_training:
+        run_new_training_from_balanced_data()
+        evaluate_on_all_valid_datasets('model_checkpoint_balanced_multi.pth')
+
     # Initialize file paths
     train_image_file = 'data/big_vesicle_cls/bigV_cls_im_v2.h5'
     train_mask_file = 'data/big_vesicle_cls/bigV_cls_mask_v2.h5'
@@ -268,7 +365,10 @@ if __name__ == '__main__':
 
     #train_and_save_model(train_image_file, train_mask_file, train_label_file, checkpoint_path, batch_size, n_channels, n_classes, num_epochs, lr, momentum)
 
-    #eval_model_results(train_image_file, train_mask_file, train_label_file, checkpoint_path, n_channels, n_classes, batch_size, lr, momentum)
+    image_file = 'data/SHL20/im.h5'
+    mask_file = 'data/SHL20/mask.h5'
+    label_file = 'data/SHL20/label.h5'
+    #eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_channels, n_classes, batch_size, lr, momentum)
 
     visualize_training = False
     if visualize_training:
@@ -288,6 +388,7 @@ if __name__ == '__main__':
     for neuron_name in neuron_list:
         print(f"Beginning visualization for {neuron_name}...")
         data_dir = os.path.join("data", neuron_name)
+        save_dir = os.path.join("results", neuron_name)
 
         visualize_testing = True
         if visualize_testing:
@@ -300,8 +401,6 @@ if __name__ == '__main__':
 
             # No test label file for this step
             test_label_file = None
-
-            save_dir = os.path.join("results", neuron_name)
 
             # Run prediction and HTML generation
             predict_images(
@@ -317,6 +416,7 @@ if __name__ == '__main__':
                 lr,
                 momentum
             )
-
+        generate_html_visualization = True
+        if generate_html_visualization:
             generate_html(save_dir, save_dir, color_labels)
-        print(f"{neuron_name} has been visualized.")
+            print(f"{neuron_name} has been visualized.")
