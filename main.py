@@ -12,7 +12,7 @@ import h5py
 
 from scripts.html_visualization import HtmlGenerator
 from scripts.data_loader import create_data_loader
-from scripts.vesicle_net import VesicleNet, create_model, load_checkpoint, train_model
+from scripts.vesicle_net import StandardNet, create_model, load_checkpoint, train_model
 from scripts.img_visualization import generate_images
 
 
@@ -119,7 +119,7 @@ def train_and_save_model(image_file, mask_file, label_file, checkpoint_path, bat
 def eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_channels, n_classes, batch_size, lr=0.001,
                        momentum=0.9):
     # Initialize the model and optimizer
-    model = VesicleNet(in_channels=n_channels, num_classes=n_classes)
+    model = StandardNet(in_channels=n_channels, num_classes=n_classes)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum)
 
     # Load the model checkpoint
@@ -145,6 +145,9 @@ def eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_cha
     # Convert to numpy arrays
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
+    valid = y_true != -1
+    y_true = y_true[valid]
+    y_pred = y_pred[valid]
 
     # Calculate evaluation metrics
     accuracy = accuracy_score(y_true, y_pred)
@@ -158,6 +161,14 @@ def eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_cha
     print(f"Validation Recall: {recall:.4f}")
     print(f"Validation F1 Score: {f1:.4f}")
 
+    prec_per_class = precision_score(y_true, y_pred, average=None, zero_division=0)
+    rec_per_class = recall_score(y_true, y_pred, average=None, zero_division=0)
+    f1_per_class = f1_score(y_true, y_pred, average=None, zero_division=0)
+
+    label_names = ['CV (0)', 'DV (1)', 'DVH (2)']
+    print("\nPer-class metrics:")
+    for i, name in enumerate(label_names):
+        print(f"{name}: Precision={prec_per_class[i]:.4f}, Recall={rec_per_class[i]:.4f}, F1={f1_per_class[i]:.4f}")
 
 def extract_number(string):
     numbers = re.findall(r'\d+', string)  # Find all numeric substrings
@@ -235,7 +246,7 @@ def predict_images(image_file, mask_file, label_file, bounding_box_file, checkpo
     # Create data loader for test images
     data_loader = create_data_loader(image_file, mask_file, label_file, bounding_box_file, batch_size, shuffle=False)
     # Initialize the model and optimizer
-    model = VesicleNet(in_channels=n_channels, num_classes=n_classes)
+    model = StandardNet(in_channels=n_channels, num_classes=n_classes)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum)
 
     # Load model checkpoint
@@ -342,7 +353,8 @@ def evaluate_on_all_valid_datasets(checkpoint_path):
 
 if __name__ == '__main__':
 
-    checkpoint_path = 'model_checkpoint.pth'
+    checkpoint_path = 'model_checkpoint_balanced_multi.pth'
+    #checkpoint_path = 'model_checkpoint.pth'
     color_labels = ["undefined", "CV", "DV", "DVH"]
     # Model and training parameters
     num_epochs = 40
@@ -355,7 +367,7 @@ if __name__ == '__main__':
 
     run_balanced_training = False
     if run_balanced_training:
-        run_new_training_from_balanced_data()
+        #run_new_training_from_balanced_data()
         evaluate_on_all_valid_datasets('model_checkpoint_balanced_multi.pth')
 
     # Initialize file paths
@@ -365,10 +377,10 @@ if __name__ == '__main__':
 
     #train_and_save_model(train_image_file, train_mask_file, train_label_file, checkpoint_path, batch_size, n_channels, n_classes, num_epochs, lr, momentum)
 
-    image_file = 'data/SHL20/im.h5'
-    mask_file = 'data/SHL20/mask.h5'
-    label_file = 'data/SHL20/label.h5'
-    #eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_channels, n_classes, batch_size, lr, momentum)
+    image_file = 'data/SHL55/im.h5'
+    mask_file = 'data/SHL55/mask.h5'
+    label_file = 'data/SHL55/label.h5'
+    eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_channels, n_classes, batch_size, lr, momentum)
 
     visualize_training = False
     if visualize_training:
@@ -390,7 +402,7 @@ if __name__ == '__main__':
         data_dir = os.path.join("data", neuron_name)
         save_dir = os.path.join("results", neuron_name)
 
-        visualize_testing = True
+        visualize_testing = False
         if visualize_testing:
             # Define the input file paths based on the neuron name
             vesicle_file = os.path.join(data_dir, f"vesicle_big_{neuron_name}_30-8-8_patch.h5")
@@ -416,7 +428,7 @@ if __name__ == '__main__':
                 lr,
                 momentum
             )
-        generate_html_visualization = True
+        generate_html_visualization = False
         if generate_html_visualization:
             generate_html(save_dir, save_dir, color_labels)
             print(f"{neuron_name} has been visualized.")

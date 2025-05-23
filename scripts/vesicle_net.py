@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 import os
-class VesicleNet(nn.Module):
+class StandardNet(nn.Module):
     def __init__(self, in_channels, num_classes):
-        super(VesicleNet, self).__init__()
+        super(StandardNet, self).__init__()
         self.layer1 = nn.Sequential(
             nn.Conv3d(in_channels, 16, kernel_size=(1, 3, 3), padding=(0, 1, 1)),
             nn.BatchNorm3d(16),
@@ -46,7 +46,7 @@ class VesicleNet(nn.Module):
         return x
 
 def create_model(in_channels, num_classes, lr, momentum):
-    model = VesicleNet(in_channels=in_channels, num_classes=num_classes)
+    model = StandardNet(in_channels=in_channels, num_classes=num_classes)
     criterion = nn.CrossEntropyLoss(ignore_index=-1)
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
     return model, criterion, optimizer
